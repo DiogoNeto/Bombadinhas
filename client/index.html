@@ -1,0 +1,180 @@
+<!--<EMBED SRC=".\client\midi\DBZLSW_Battle_Theme.mid" hidden=true autostart=true loop=1>-->
+<script type="text/javascript">
+</script>
+
+
+<div style="visibility: hidden;">
+    <audio id="sound" src="midi//Pacman_Introduction_Music-KP-826387403.mp3" autoplay="true" controls loop>
+        <!--<audio src="client//midi//Pacman_Introduction_Music-KP-826387403.mp3" autoplay="true" controls loop>-->
+        <p>If you are reading this, it is because your browser does not support the audio element.</p>
+    </audio>
+</div>
+<canvas id="ctx" align="center" width="800" height="450" style="border:10px solid #000000; align:center;"></canvas>
+
+<div id="chat-text" style="width:800px;height:100px;overflow-y:scroll">
+    <div>Press crtl to attack!</div>
+    <div><input id="btnPlay" type="button" value="Click to Play" hidden="true" onClick="window.location.reload()"></div>
+</div>
+ 
+<form id="chat-form">
+    <input id="chat-input" type="text" style="width:800px"></input>
+</form>
+ 
+<script src="https://cdn.socket.io/socket.io-1.4.5.js">
+</script>
+
+
+
+<script>
+    var chatText = document.getElementById('chat-text');
+    var chatInput = document.getElementById('chat-input');
+    var chatForm = document.getElementById('chat-form');
+
+    //Img
+    var Img = {};
+    Img.player = new Image();
+    Img.player.src = "/client/img/castlevania01.gif";
+    Img.player2 = new Image();
+    Img.player2.src = "/client/img/finalfantasy03.gif";
+    Img.player3 = new Image();
+    Img.player3.src = "/client/img/sf03.gif";
+    Img.player4 = new Image();
+    Img.player4.src = "/client/img/shamino.gif";
+    Img.bomb = new Image();
+    Img.bomb.src = '/client/img/bullet.png';
+    Img.block = new Image();
+    Img.block.src = '/client/img/block.png';
+    Img.bluehole = new Image();
+    Img.bluehole.src = '/client/img/hole2.png';
+    Img.blackhole = new Image();
+    Img.blackhole.src = '/client/img/blackhole.png';
+    Img.background = new Image();
+    Img.background.src = '/client/img/background2.jpg';
+    Img.gameover = new Image();
+    Img.gameover.src = '/client/img/gameover.jpg';
+    Img.apple = new Image();
+    Img.apple.src = '/client/img/Apple.png';
+
+    var ctx = document.getElementById("ctx").getContext("2d");
+    ctx.font = '30px Arial';
+    //instantiate socket.io
+    var socket = io();
+
+
+      socket.on('GameOver',function(data){
+         ctx.drawImage(Img.gameover,0,0,800,450);
+         document.getElementById("btnPlay").hidden = false;
+         var s = document.getElementById("sound");
+         s.pause();
+      });
+
+       
+    socket.on('newPositions',function(data){
+
+        ctx.fillStyle = "#7DDE36";
+        ctx.clearRect(0,0,800,450);
+        ctx.fillRect(0,0,800,450);
+
+           
+            //draw map
+            var height = 40;
+            var width = 40;
+            //draw blocks
+            ctx.drawImage(Img.background,0,0,840,640);
+
+            ctx.drawImage(Img.block,40,40,40,40);
+            ctx.drawImage(Img.block,80,40,40,40);
+            ctx.drawImage(Img.block,120,40,40,40);
+            ctx.drawImage(Img.block,440,280,40,40);
+            ctx.drawImage(Img.block,440,320,40,40);
+            ctx.drawImage(Img.block,440,360,40,40);
+            ctx.drawImage(Img.block,400,180,40,40);
+            ctx.drawImage(Img.block,400,140,40,40);
+            ctx.drawImage(Img.block,640,40,40,40);
+            ctx.drawImage(Img.block,680,40,40,40);
+            ctx.drawImage(Img.block,720,40,40,40);
+            ctx.drawImage(Img.block,40,280,40,40);
+            ctx.drawImage(Img.block,40,320,40,40);
+            ctx.drawImage(Img.block,40,360,40,40);
+            
+            ctx.drawImage(Img.blackhole,0,40,40,40);
+            ctx.drawImage(Img.bluehole,760,410,40,40);
+            
+            ctx.drawImage(Img.blackhole,760,40,40,40);
+            ctx.drawImage(Img.bluehole,0,410,40,40);
+ 
+
+
+              //draw players
+        for(var i = 0 ; i < data.player.length; i++){
+            if(i==0){
+                ctx.drawImage(Img.player, data.player[i].x, data.player[i].y-20, 40, 40);
+            }   
+            if(i==1){
+                ctx.drawImage(Img.player2, data.player[i].x, data.player[i].y-20, 40, 40);
+            }
+            if(i==2){
+                ctx.drawImage(Img.player3, data.player[i].x, data.player[i].y-20, 40, 40);
+            }   
+            if(i==3){
+                ctx.drawImage(Img.player4, data.player[i].x, data.player[i].y-20, 40, 40);
+            } 
+        }
+
+       //draw bombs
+        for(var i = 0 ; i < data.bomb.length; i++){
+            ctx.drawImage(Img.bomb,data.bomb[i].x-5,data.bomb[i].y-5,10,10);
+        }
+
+    });
+   
+    socket.on('ApplePos',function(data){
+        ctx.drawImage(Img.apple,data.x,data.y,15,15);
+    });
+
+    socket.on('addToChat',function(data){
+        chatText.innerHTML += '<div>' + data + '</div>';
+    });
+    socket.on('evalAnswer',function(data){
+        console.log(data);
+    });
+   
+    //submit messages
+    chatForm.onsubmit = function(e){
+        e.preventDefault();
+        if(chatInput.value[0] === '/')
+            socket.emit('evalServer',chatInput.value.slice(1));
+        else
+            socket.emit('sendMsgToServer',chatInput.value);
+        chatInput.value = '';      
+    }
+   
+    //start command action
+    document.onkeydown = function(event){
+        if(event.keyCode === 39)    
+            socket.emit('keyPress',{inputId:'right',state:true});
+        else if(event.keyCode === 40)  
+            socket.emit('keyPress',{inputId:'down',state:true});
+        else if(event.keyCode === 37) 
+            socket.emit('keyPress',{inputId:'left',state:true});
+        else if(event.keyCode === 38) 
+            socket.emit('keyPress',{inputId:'up',state:true});
+        else if(event.keyCode === 17) 
+            socket.emit('keyPress',{inputId:'attack',state:true}); 
+    }
+
+    //stop command action
+    document.onkeyup = function(event){
+        if(event.keyCode === 39)    
+            socket.emit('keyPress',{inputId:'right',state:false});
+        else if(event.keyCode === 40)  
+            socket.emit('keyPress',{inputId:'down',state:false});
+        else if(event.keyCode === 37) 
+            socket.emit('keyPress',{inputId:'left',state:false});
+        else if(event.keyCode === 38) 
+            socket.emit('keyPress',{inputId:'up',state:false});
+        else if(event.keyCode === 17) 
+            socket.emit('keyPress',{inputId:'attack',state:false});
+    }
+   
+</script>
